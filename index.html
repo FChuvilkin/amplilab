@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AmpliLab · Amplitude Implementation Lab</title>
+  <title>Awora | AmpliLab</title>
   <!-- Deliberately no Amplitude (or any other) tracking on this page. It only links to the variants. -->
   <link rel="icon" href="shared/brand/awora-mark.svg" type="image/svg+xml">
   <!-- Same Awora branding as the variant pages: fonts, palette, header, buttons and badges come from shared/lab.css. -->
@@ -41,46 +41,33 @@
 <body>
   <header class="lab-strip">
     <div class="strip-row">
-      <a href="./" class="strip-home" aria-label="AmpliLab home">
+      <a href="./" class="strip-home" aria-label="Awora">
         <img class="strip-logo" src="shared/brand/awora-wordmark.svg" alt="Awora" width="1784" height="335">
-        <span class="strip-divider" aria-hidden="true"></span>
-        <span class="strip-name">AmpliLab</span>
       </a>
       <span class="strip-spacer"></span>
-      <a class="strip-link" href="https://fchuvilkin.github.io/fedor-test/">FT demo site ↗</a>
-      <a class="strip-link" id="repo-link" href="https://github.com/FChuvilkin/amplilab" target="_blank" rel="noopener">GitHub ↗</a>
+      <a href="./" class="strip-home" aria-label="AmpliLab home"><span class="strip-name">AmpliLab</span></a>
     </div>
   </header>
 
   <main>
     <section class="hero">
-      <p class="eyebrow"><b>00</b>Amplitude Implementation Lab</p>
-      <h1>One page, wired to Amplitude <em>many ways</em>.</h1>
-      <p class="lede">Each variant is the same page wired to Amplitude differently and sending to its own Amplitude project. Open one to see its wiring, live SDK state and a log of everything it sends. This landing page has no tracking on it.</p>
+      <h1>Implement Amplitude, your way</h1>
     </section>
 
-    <div class="section-head"><p class="eyebrow"><b>01</b>Pick an implementation</p></div>
     <div class="grid" id="cards"></div>
 
-    <p class="foot">Variants are defined in <code>registry.js</code>. Each one lives in its own folder with a readable <code>index.html</code> showing exactly how Amplitude is loaded.</p>
   </main>
 
   <script src="registry.js"></script>
   <script>
     function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
-    if (window.LAB_REPO) document.getElementById('repo-link').href = window.LAB_REPO;
-    document.getElementById('cards').innerHTML = window.LAB_REGISTRY.map(function (v) {
+    document.getElementById('cards').innerHTML = window.LAB_REGISTRY.slice().sort(function (a, b) { return (b.status === 'live') - (a.status === 'live'); }).map(function (v) {
       var live = v.status === 'live';
       return '<article class="card ' + esc(v.status) + '" id="card-' + esc(v.slug) + '">' +
         '<div class="card-status">' + esc(v.status) + '</div>' +
         '<h2>' + esc(v.title) + '</h2>' +
         '<div class="card-badges">' + v.products.map(function (p) { return '<span class="badge">' + esc(p) + '</span>'; }).join('') + '</div>' +
         '<p>' + esc(v.method) + '</p>' +
-        '<dl class="card-meta">' +
-          '<dt>folder</dt><dd>' + esc(v.slug) + '/</dd>' +
-          '<dt>build</dt><dd>' + esc(v.build) + '</dd>' +
-          '<dt>api key</dt><dd>' + esc(v.apiKey || '–') + '</dd>' +
-        '</dl>' +
         (live
           ? '<a class="btn btn-primary" id="open-' + esc(v.slug) + '" href="' + esc(v.slug) + '/">Open ' + esc(v.slug) + ' →</a>'
           : '<span class="btn btn-secondary" aria-disabled="true">Not built yet</span>') +

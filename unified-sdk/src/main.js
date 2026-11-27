@@ -20,17 +20,5 @@ var INIT_OPTIONS = {
 // Expose the client for the console, for adapter.js and for Web Experiment, which looks for window.amplitude.
 window.amplitude = amplitude;
 
-// Lab plumbing: put the lab's run_id (shared/lab-early.js) on every event, autocaptured ones included.
-// Added before initAll() so that it also catches the first events (session_start, page view).
-amplitude.add({
-  name: 'amplilab-run-id',
-  type: 'enrichment',
-  execute: function (event) {
-    var runId = window.LabEarly && window.LabEarly.runId();
-    if (runId) event.event_properties = Object.assign({}, event.event_properties, { run_id: runId });
-    return Promise.resolve(event);
-  }
-});
-
 window.amplitudeInitOptions = INIT_OPTIONS; // shown on the page under "Init options"
 window.amplitudeReady = amplitude.initAll(API_KEY, INIT_OPTIONS);

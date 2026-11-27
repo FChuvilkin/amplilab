@@ -13,14 +13,14 @@
 //     track(name, props), identify({ set, add }), setUserId(id), revenue({ productId, price, quantity, revenueType }),
 //     reset(), flush(),                              -> may return promises
 //     ids():     { deviceId, sessionId, userId },
-//     status():  Promise<[{ label, value, ok }]>  product-specific state rows (replay, flags, ...)
+//     status():  Promise<[{ label, value, ok, checkOnly? }]>  product-specific state rows (replay, flags, ...);
+//                ok:boolean also makes the row a self-check on the right; checkOnly:true shows it only there
 //   }
-// The adapter is also responsible for putting window.LabEarly.runId() on every event as run_id.
 (function () {
   'use strict';
 
   var A = window.LabAdapter;
-  var early = window.LabEarly || { runId: function () { return ''; }, setRunId: function (v) { return v; }, entries: function () { return []; } };
+  var early = window.LabEarly || { entries: function () { return []; } };
   var info = (A && A.info) || {};
   var PAGE = document.body.getAttribute('data-lab-page') || 'home';
   var registry = window.LAB_REGISTRY || [];
@@ -32,7 +32,7 @@
   function pretty(v) { return typeof v === 'string' ? v : JSON.stringify(v, null, 2); }
   function time(t) { var d = new Date(t); return d.toLocaleTimeString([], { hour12: false }) + '.' + String(d.getMilliseconds()).padStart(3, '0'); }
   function when(p) { return p && typeof p.then === 'function' ? p : Promise.resolve(p); }
-  function eventsOf(entry) { var r = entry.request; return r && typeof r === 'object' && Array.isArray(r.events) ? r.events : []; }
+  function eventsOf(entry) { var r = entry.request; return r && typeof r === 'object' && Array.isArray(r.events) ? r.events.filter(function (ev) { return ev && typeof ev === 'object' && ev.event_type; }) : []; } // analytics events only (Session Replay uploads carry raw replay chunks)
   function pathOf(url) { try { var u = new URL(url); return u.host + u.pathname; } catch (e) { return url; } }
 
   // ---------- render ----------
@@ -63,7 +63,6 @@
       '<dl>' +
         metaRow('Implementation', '<span class="meta-title" id="variant-title">' + esc(info.title || 'No adapter loaded') + '</span>') +
         metaRow('Products implemented', '<span id="variant-products">' + ((info.products || []).map(function (p) { return '<span class="badge">' + esc(p) + '</span>'; }).join('') || '–') + '</span>') +
-        metaRow('Data center', '<span id="data-center">' + esc(info.serverZone || '–') + '</span>') +
         (versions ? metaRow('Versions', '<span class="versions" id="variant-versions">' + versions + '</span>') : '') +
       '</dl>' +
     '</section>';
@@ -118,12 +117,12 @@
     '<section class="panel" id="log-panel">' +
       sectionHead('03', 'Log',
         '<span class="strip-spacer"></span>' +
+        '<label class="log-toggle"><input type="checkbox" id="log-show-workers"> Show Session Replay Workers</label>' +
         '<button class="btn btn-small btn-secondary" id="log-clear">Clear view</button>' +
         '<button class="btn btn-small btn-secondary" id="log-export">Export JSON</button>') +
       '<div class="log-cols">' +
-        '<div><h3>Intent <span class="small muted">what the page asked the adapter to do</span></h3><div id="log-intent" class="log"></div></div>' +
         '<div><h3>Wire <span class="small muted">requests to *.amplitude.com, decoded</span></h3><div id="log-wire" class="log"></div>' +
-          '<div class="small muted note">Session Replay uploads run in a Web Worker and do not appear here. Use DevTools → Network to see them.</div></div>' +
+        '</div>' +
       '</div>' +
     '</section>';
 
@@ -132,27 +131,16 @@
     header + '<main>' + meta + actions + state + log + wiring + '</main>');
 
   // ---------- logs ----------
-  var intents = [];
   var hiddenBefore = 0; // "Clear view" hides entries up to this time
   var openWire = {};
 
-  function intent(action, name, detail, error) {
-    var e = { t: Date.now(), action: action, name: name || '', detail: detail === undefined ? null : detail, error: error || null };
-    intents.push(e);
-    renderIntent(e);
-  }
-  function renderIntent(e) {
-    var d = document.createElement('div');
-    d.className = 'log-line' + (e.error ? ' bad' : '');
-    d.innerHTML = '<span class="muted">' + time(e.t) + '</span> <b>' + esc(e.action) + '</b> ' + esc(e.name) +
-      (e.detail != null ? ' <span class="muted">' + esc(JSON.stringify(e.detail)) + '</span>' : '') +
-      (e.error ? ' <span class="bad">' + esc(e.error) + '</span>' : '');
-    $('log-intent').prepend(d);
-  }
+  function showWorkers() { var c = $('log-show-workers'); return !c || c.checked; }
 
   function renderWire() {
-    var list = early.entries().filter(function (e) { return e.status !== null && e.t >= hiddenBefore; });
-    $('log-wire').innerHTML = list.reverse().map(function (e) {
+    var list = early.entries().filter(function (e) { return e.status !== null && e.t >= hiddenBefore && (showWorkers() || !/\(worker\)/.test(e.transport)); });
+    var box = $('log-wire');
+    var atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 24; // oldest at top, newest at bottom: follow new entries only if already at the bottom
+    box.innerHTML = list.map(function (e) {
       var names = eventsOf(e).map(function (ev) { return ev.event_type; });
       var cls = e.ok ? 'ok' : (e.status === 0 || e.status >= 400 ? 'bad' : '');
       return '<details class="log-line" data-seq="' + e.seq + '"' + (openWire[e.seq] ? ' open' : '') + '><summary>' +
@@ -166,7 +154,9 @@
         '<div class="small">response</div><pre>' + esc(pretty(e.response)) + '</pre>' +
         '</details>';
     }).join('');
+    if (atBottom) box.scrollTop = box.scrollHeight;
   }
+  $('log-show-workers').addEventListener('change', renderWire);
   $('log-wire').addEventListener('toggle', function (ev) {
     var s = ev.target.getAttribute && ev.target.getAttribute('data-seq');
     if (s) openWire[s] = ev.target.open;
@@ -183,10 +173,9 @@
       { label: 'SDK', value: !A ? 'no adapter (window.LabAdapter missing)' : readyError ? 'init failed: ' + readyError : readyAt === null ? 'initialising…' : 'ready ' + readyAt + ' ms after navigation start', ok: !!A && readyAt !== null && !readyError },
       { label: 'device_id', value: ids.deviceId || '–', id: 'd-device' },
       { label: 'session_id', value: ids.sessionId || '–', id: 'd-session' },
-      { label: 'user_id', value: ids.userId || '(none)', id: 'd-user' },
-      { label: 'run_id', value: early.runId() || '(none)', id: 'd-run' }
+      { label: 'user_id', value: ids.userId || '(none)', id: 'd-user' }
     ].concat(statusRows);
-    $('state-list').innerHTML = rows.map(function (r) {
+    $('state-list').innerHTML = rows.filter(function (r) { return !r.checkOnly; }).map(function (r) {
       return '<dt>' + esc(r.label) + '</dt><dd' + (r.id ? ' id="' + r.id + '"' : '') + (r.ok === false ? ' class="bad"' : '') + '>' + esc(r.value) + '</dd>';
     }).join('');
 
@@ -195,16 +184,14 @@
     var accepted = uploads.filter(function (e) { return e.ok; });
     var failed = entries.filter(function (e) { return e.status === 0 || e.status >= 400; });
     var lastEvents = uploads.length ? eventsOf(uploads[uploads.length - 1]) : [];
-    var run = early.runId();
     var checks = [
-      [!!A, 'Adapter loaded'],
+      [!!A, 'Implementation Adapter loaded'],
       [readyAt !== null && !readyError, 'SDK initialised'],
       [!!ids.deviceId, 'device_id set'],
       [!!ids.sessionId, 'session_id set'],
       [accepted.length > 0, 'Amplitude accepted an event upload (' + accepted.length + '/' + uploads.length + ' uploads 2xx)'],
       [failed.length === 0, failed.length ? failed.length + ' failed request(s) to Amplitude' : 'No failed requests to Amplitude']
     ];
-    if (run) checks.push([lastEvents.length > 0 && lastEvents.every(function (ev) { return ev.event_properties && ev.event_properties.run_id === run; }), 'run_id "' + run + '" on every event in the last upload']);
     statusRows.forEach(function (r) { if (typeof r.ok === 'boolean') checks.push([r.ok, r.label + ': ' + r.value]); });
     $('checks').innerHTML = checks.map(function (c) { return '<li class="' + (c[0] ? 'ok' : 'bad') + '"><span class="check-mark" aria-hidden="true">' + (c[0] ? '✓' : '✗') + '</span>' + esc(c[1]) + '</li>'; }).join('');
   }
@@ -223,11 +210,10 @@
 
   // ---------- actions ----------
   function call(action, name, detail, fn) {
-    intent(action, name, detail);
     if (!A) return Promise.resolve();
     try {
-      return when(fn()).catch(function (err) { intent(action + ' failed', name, null, String(err)); });
-    } catch (err) { intent(action + ' failed', name, null, String(err)); return Promise.resolve(); }
+      return when(fn()).catch(function () {});
+    } catch (err) { return Promise.resolve(); }
   }
   function track(name, props) { return call('track', name, props, function () { return A.track(name, props); }); }
 
@@ -264,10 +250,10 @@
     call('identify', '', ops, function () { return A.identify(ops); }).then(renderState);
   });
 
-  on('log-clear', function () { hiddenBefore = Date.now(); $('log-intent').innerHTML = ''; renderWire(); });
+  on('log-clear', function () { hiddenBefore = Date.now(); renderWire(); });
   on('log-export', function () {
     var ids = {}; try { ids = A ? A.ids() : {}; } catch (e) {}
-    var dump = { exported_at: new Date().toISOString(), variant: info.slug, page: PAGE, url: location.href, run_id: early.runId(), ids: ids, intents: intents, wire: early.entries() };
+    var dump = { exported_at: new Date().toISOString(), variant: info.slug, page: PAGE, url: location.href, ids: ids, wire: early.entries() };
     var a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([JSON.stringify(dump, null, 2)], { type: 'application/json' }));
     a.download = 'amplilab-' + (info.slug || 'page') + '-' + Date.now() + '.json';
@@ -311,11 +297,8 @@
     track('Lab Page Viewed', { page: PAGE });
     when(A.ready).then(function () {
       readyAt = Math.round(performance.now());
-      intent('ready', '', { ms: readyAt });
       renderState(); refreshStatus(); renderRuntimeScripts();
     }, function (err) { readyError = String(err); renderState(); });
-  } else {
-    intent('error', 'window.LabAdapter is missing: check this variant\'s adapter.js', null, 'no adapter');
   }
   setInterval(function () { renderState(); }, 2000);
   setTimeout(function () { refreshStatus(); renderRuntimeScripts(); }, 4000);

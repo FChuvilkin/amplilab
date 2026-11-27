@@ -44,7 +44,9 @@ h1, h2, h3 { font-family: var(--font-serif); font-weight: 400; }
 .strip-name { font-family: var(--font-serif); font-size: 24px; line-height: 1; }
 .strip-link { font-size: 15px; font-weight: 500; color: var(--ink-soft); text-decoration: none; transition: color .3s var(--ease); }
 .strip-link:hover { color: var(--ink); }
-.lab-strip select { font: 500 14px var(--font-sans); color: var(--ink); background: var(--paper); padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; cursor: pointer; }
+.lab-strip select { font: 500 14px var(--font-sans); color: var(--ink); background: var(--paper); appearance: none; -webkit-appearance: none; padding: 8px 38px 8px 16px; border: 1px solid var(--line); border-radius: 999px; cursor: pointer;
+  /* custom chevron so the gap to the right edge matches the 16px gap on the left */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23292929' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 16px center; }
 
 main { max-width: 1260px; margin: 0 auto; padding: 32px 24px 64px; }
 
@@ -107,8 +109,9 @@ input::placeholder { color: var(--ink-soft); }
 .checks li.bad { color: var(--rust); }
 
 /* log */
-.log-cols { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 20px; }
-@media (max-width: 900px) { .log-cols { grid-template-columns: 1fr; } }
+.log-toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink-2); cursor: pointer; user-select: none; }
+.log-toggle input { accent-color: var(--sage); width: 16px; height: 16px; margin: 0; cursor: pointer; }
+.log-cols { display: block; }
 .log-cols h3 { font-size: 18px; margin-bottom: 8px; }
 .log { height: 360px; overflow: auto; font: 12px/1.55 var(--font-mono); color: var(--cream); background: var(--code-bg); border-radius: 12px; padding: 12px 14px; }
 .log .muted { color: #e0d0bc80; }
