@@ -1,6 +1,8 @@
 // Amplitude Implementation Lab: one entry per implementation variant.
 // Plain data, no tracking. The landing page (index.html) renders its cards from this list.
 // Browser API keys are public by design, so they are committed.
+window.LAB_REPO = 'https://github.com/FChuvilkin/amplilab';
+
 window.LAB_REGISTRY = [
   {
     slug: 'browser-sdk',

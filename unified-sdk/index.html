@@ -3,122 +3,25 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Unified SDK Lab — Fedor Testing</title>
-  <!-- 1. Amplitude Browser Unified SDK (npm @amplitude/unified, bundled from src/main.js). Sync, so it's set up before Web Experiment runs. -->
+  <title>AmpliLab · Unified SDK (npm) + Web Experiment</title>
+
+  <!-- Lab tooling, not Amplitude: run_id + network tap. Must load before any Amplitude script. -->
+  <script src="../shared/lab-early.js" data-lab></script>
+
+  <!-- ===== Amplitude wiring for this variant ===== -->
+  <!-- 1. Browser Unified SDK (npm @amplitude/unified, bundled from src/main.js). Sync, so it's initialised before Web Experiment runs. -->
   <script src="dist/amplitude-unified.js"></script>
   <!-- 2. Web Experiment: separate script, synchronous and high in <head> so variants apply before paint. -->
   <script src="https://cdn.amplitude.com/script/06556c56eb0e04dd109403f006794241.experiment.js"></script>
-  <style>
-    * { box-sizing: border-box; }
-    body { margin: 0; font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; color: #1d1d1f; background: #f5f5f7; }
-    header { background: #1e1b4b; color: #fff; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; }
-    header strong { letter-spacing: .5px; }
-    header a { color: #c7d2fe; text-decoration: none; font-size: 14px; }
-    main { max-width: 960px; margin: 0 auto; padding: 48px 24px; }
-    .hero { text-align: center; padding: 32px 0 48px; }
-    .hero h1 { font-size: 44px; line-height: 1.1; margin: 0 0 16px; }
-    .hero p { font-size: 19px; color: #555; max-width: 620px; margin: 0 auto 28px; }
-    .btn { display: inline-block; border: 0; border-radius: 8px; padding: 12px 22px; font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; }
-    .btn-primary { background: #4f46e5; color: #fff; }
-    .btn-secondary { background: #fff; color: #4f46e5; border: 1px solid #c7d2fe; }
-    .hero .btn + .btn { margin-left: 8px; }
-    .plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
-    .plan { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
-    .plan h3 { margin: 0 0 4px; }
-    .plan .price { font-size: 30px; font-weight: 700; margin: 8px 0 16px; }
-    .plan.featured { outline: 2px solid #4f46e5; }
-    .plan .btn { width: 100%; }
-    #debug { margin-top: 48px; background: #111827; color: #d1fae5; border-radius: 12px; padding: 20px; font: 13px/1.6 ui-monospace, Menlo, monospace; }
-    #debug h2 { color: #fff; font-size: 14px; margin: 0 0 8px; }
-    #debug dl { display: grid; grid-template-columns: 180px 1fr; margin: 0; }
-    #debug dt { color: #9ca3af; }
-    #debug dd { margin: 0; word-break: break-all; }
-    #log { margin-top: 12px; max-height: 160px; overflow: auto; color: #fde68a; }
-  </style>
+  <!-- ===== end of Amplitude wiring ===== -->
+
+  <!-- Lab tooling: adapter.js maps the shared page's actions onto this variant's SDK. -->
+  <script src="adapter.js" data-lab></script>
+  <script src="../registry.js" data-lab></script>
+  <link rel="stylesheet" href="../shared/lab.css">
 </head>
-<body>
-  <header>
-    <strong>UNIFIED SDK LAB</strong>
-    <a href="../index.html" id="back-to-lab">← all implementations</a>
-  </header>
-
-  <main>
-    <!-- Web Experiment targets: give each element a stable id so the visual editor can pick it. -->
-    <section class="hero" id="hero">
-      <h1 id="hero-title">Analytics, replay and experiments in one SDK</h1>
-      <p id="hero-subtitle">A standalone test page for the Amplitude Browser Unified SDK, with Web Experiment loaded alongside it.</p>
-      <button class="btn btn-primary" id="cta-primary" data-cta="start_trial">Start free trial</button>
-      <button class="btn btn-secondary" id="cta-secondary" data-cta="book_demo">Book a demo</button>
-    </section>
-
-    <section class="plans" id="plans">
-      <div class="plan" id="plan-starter">
-        <h3>Starter</h3><p>For side projects.</p>
-        <div class="price">$0</div>
-        <button class="btn btn-secondary" data-plan="starter" data-price="0">Choose Starter</button>
-      </div>
-      <div class="plan featured" id="plan-growth">
-        <h3>Growth</h3><p>For growing teams.</p>
-        <div class="price">$49</div>
-        <button class="btn btn-primary" data-plan="growth" data-price="49">Choose Growth</button>
-      </div>
-      <div class="plan" id="plan-enterprise">
-        <h3>Enterprise</h3><p>For large organisations.</p>
-        <div class="price">Custom</div>
-        <button class="btn btn-secondary" data-plan="enterprise" data-price="">Contact sales</button>
-      </div>
-    </section>
-
-    <section id="debug">
-      <h2>SDK state</h2>
-      <dl>
-        <dt>SDK</dt><dd id="d-sdk">loading…</dd>
-        <dt>device_id</dt><dd id="d-device">–</dd>
-        <dt>session_id</dt><dd id="d-session">–</dd>
-        <dt>Session Replay</dt><dd id="d-replay">–</dd>
-        <dt>Feature Experiment</dt><dd id="d-flags">–</dd>
-        <dt>Web Experiment</dt><dd id="d-webexp">–</dd>
-      </dl>
-      <div id="log"></div>
-    </section>
-  </main>
-
-  <script>
-    (function () {
-      var amp = window.amplitude;
-      function $(id) { return document.getElementById(id); }
-      function log(msg) { var d = document.createElement('div'); d.textContent = new Date().toLocaleTimeString() + '  ' + msg; $('log').prepend(d); }
-      function track(name, props) { log(name + ' ' + JSON.stringify(props || {})); amp.track(name, props); }
-
-      if (!amp || !amp.initAll) { $('d-sdk').textContent = 'NOT LOADED: run `npm run build` in lab/unified-sdk/'; return; }
-
-      track('Lab Page Viewed', { page: 'unified_lab' });
-
-      document.addEventListener('click', function (e) {
-        var el = e.target.closest('[data-cta], [data-plan]');
-        if (!el) return;
-        if (el.dataset.cta) track('CTA Clicked', { cta: el.dataset.cta, cta_text: el.textContent.trim() });
-        if (el.dataset.plan) track('Plan Selected', { plan: el.dataset.plan, price: el.dataset.price ? Number(el.dataset.price) : null });
-      });
-
-      document.addEventListener('amplitude:ready', function () {
-        $('d-sdk').textContent = '@amplitude/unified, initAll() done';
-        $('d-device').textContent = amp.getDeviceId();
-        $('d-session').textContent = amp.getSessionId();
-        var sr = amp.sessionReplay();
-        $('d-replay').textContent = sr ? 'plugin loaded (sampleRate 1)' : 'not loaded';
-
-        var exp = amp.experiment();
-        if (!exp) { $('d-flags').textContent = 'not loaded'; }
-        else exp.fetch().then(function () {
-          var all = exp.all(), keys = Object.keys(all);
-          $('d-flags').textContent = keys.length ? keys.map(function (k) { return k + '=' + all[k].value; }).join(', ') : 'no flags for this user';
-        }, function (err) { $('d-flags').textContent = 'fetch failed: ' + err; });
-
-        var we = window.webExperiment;
-        $('d-webexp').textContent = we ? 'script loaded (window.webExperiment present)' : 'script not loaded';
-      });
-    })();
-  </script>
+<body data-lab-page="home">
+  <!-- The whole page is rendered by shared/lab.js, identical in every variant. -->
+  <script src="../shared/lab.js" data-lab></script>
 </body>
 </html>
