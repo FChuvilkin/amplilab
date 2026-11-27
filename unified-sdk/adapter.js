@@ -30,18 +30,6 @@
         'Web Experiment is not part of the npm Unified SDK. It is loaded as a separate script and talks to the SDK through the global analytics connector ($default_instance), so initAll() must not set instanceName and the bundle must load first.',
         'Remote config (below) can override the autocapture settings in the init options.',
         'Session Replay uploads go out from a Web Worker, so they do not show in the Wire log; check the [Amplitude] Session Replay ID property on events instead.'
-      ],
-      expectedExtra: [
-        { name: 'session_start', source: 'SDK', trigger: 'new session', props: '' },
-        { name: '[Amplitude] Page Viewed', source: 'autocapture', trigger: 'page load', props: 'page URL, title, referrer…' },
-        { name: '[Amplitude] Element Clicked', source: 'autocapture', trigger: 'clicks on buttons and links', props: 'element text, selector, hierarchy…' },
-        { name: '[Amplitude] Element Changed', source: 'autocapture', trigger: 'changing #signup-role', props: 'element value, selector…' },
-        { name: '[Amplitude] Viewport Content Updated', source: 'autocapture', trigger: 'page load / scroll', props: 'visible element ids' },
-        { name: '[Amplitude] Form Started', source: 'autocapture', trigger: 'first input in #signup-form', props: 'form id, destination' },
-        { name: '[Amplitude] Form Submitted', source: 'autocapture', trigger: '#signup-form submit', props: 'form id, destination' },
-        { name: '[Amplitude] File Downloaded', source: 'autocapture', trigger: '#link-download', props: 'file name, extension' },
-        { name: '[Guides-Surveys] Engagement Booted', source: 'Guides & Surveys', trigger: 'SDK start', props: '' },
-        { name: '$exposure', source: 'Web Experiment', trigger: 'only when a running experiment targets this page', props: 'flag_key, variant' }
       ]
     },
 
