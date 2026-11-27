@@ -1,0 +1,14 @@
+{
+  "name": "ft-unified-sdk-demo",
+  "private": true,
+  "description": "Standalone page using the Amplitude Browser Unified SDK (npm) plus the Web Experiment script.",
+  "scripts": {
+    "build": "esbuild src/main.js --bundle --format=iife --minify --target=es2017 --outfile=dist/amplitude-unified.js"
+  },
+  "dependencies": {
+    "@amplitude/unified": "1.2.9"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}
