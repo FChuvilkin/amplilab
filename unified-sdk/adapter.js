@@ -23,13 +23,13 @@
         'Web Experiment script': 'CDN, unversioned'
       },
       initOptions: window.amplitudeInitOptions,
-      sources: ['src/main.js', 'adapter.js', 'package.json'],
+      sources: ['src/main.js', 'package.json'],
       remoteConfigUrl: 'https://sr-client-cfg.amplitude.com/config/' + API_KEY + '?config_group=browser',
       caveats: [
         'The Unified SDK is npm-only; dist/amplitude-unified.js is an esbuild bundle of src/main.js, committed to the repo.',
         'Web Experiment is not part of the npm Unified SDK. It is loaded as a separate script and talks to the SDK through the global analytics connector ($default_instance), so initAll() must not set instanceName and the bundle must load first.',
         'Remote config (below) can override the autocapture settings in the init options.',
-        'Session Replay uploads go out from a Web Worker, so they do not show in the Wire log; check the [Amplitude] Session Replay ID property on events instead.'
+        'Session Replay uploads go out from a Web Worker. The Wire log captures them by wrapping Worker in shared/lab-early.js; untick "Show Session Replay Workers" to hide them.'
       ]
     },
 
@@ -63,12 +63,9 @@
 
       var sr = amp.sessionReplay();
       var replayId = sr && sr.getSessionReplayProperties ? sr.getSessionReplayProperties()['[Amplitude] Session Replay ID'] : null;
-      rows.push({ label: 'Session Replay', value: !sr ? 'plugin not loaded' : replayId ? 'recording, replay id ' + replayId : 'plugin loaded, not recording (not sampled?)', ok: !!replayId });
-
-      var connector = globalThis.analyticsConnectorInstances && globalThis.analyticsConnectorInstances['$default_instance'];
-      var connId = null;
-      try { connId = connector && connector.identityStore.getIdentity().deviceId; } catch (e) {}
-      rows.push({ label: 'Connector', value: connector ? '$default_instance, device_id ' + (connId || '–') : 'missing', ok: !!connector && connId === amp.getDeviceId() });
+      // Left (state list): just the replay ID. Right (self-checks): just whether it is recording.
+      rows.push({ label: 'Session Replay ID', value: replayId || '–' });
+      rows.push({ label: 'Session Replay', value: !sr ? 'plugin not loaded' : replayId ? 'recording' : 'plugin loaded, not recording (not sampled?)', ok: !!replayId, checkOnly: true });
 
       rows.push({ label: 'Web Experiment', value: window.webExperiment ? 'script loaded (window.webExperiment present)' : 'script not loaded', ok: !!window.webExperiment });
 

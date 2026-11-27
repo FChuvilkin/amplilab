@@ -6,8 +6,8 @@ AmpliLab: an Amplitude Implementation Lab. The same simple page, wired to Amplit
 ## Layout
 - `index.html` — landing page. Deliberately NO tracking of any kind. Renders one card per variant from `registry.js`.
 - `registry.js` — the single list of variants: slug, title, method, products, build, apiKey, status (`live` | `planned`). Adding a variant = one entry here + one folder.
-- `shared/` — the page itself, identical for every variant. `lab-early.js` (run_id + network tap on `*.amplitude.com`; load FIRST in `<head>`), `lab.js` (renders the whole page into `<body>`, runs the actions, log and self-checks; the adapter contract is documented at its top), `lab.css`, `brand/` (Awora logo + fonts, self-hosted), `lab-sample.csv` (currently unused).
-- `<slug>/` — one folder per variant, e.g. `unified-sdk/`. Contains `index.html` and `page-2.html` whose `<head>` holds ONLY that variant's Amplitude wiring plus the lab scripts (marked `data-lab`), and an `adapter.js` that defines `window.LabAdapter` (maps the lab's actions onto the SDK and puts `run_id` on every event). Variants that need npm have `package.json`, `src/`, and a committed `dist/` bundle.
+- `shared/` — the page itself, identical for every variant. `lab-early.js` (network tap on `*.amplitude.com`; load FIRST in `<head>`), `lab.js` (renders the whole page into `<body>`, runs the actions, log and self-checks; the adapter contract is documented at its top), `lab.css`, `brand/` (Awora logo + fonts, self-hosted), `lab-sample.csv` (currently unused).
+- `<slug>/` — one folder per variant, e.g. `unified-sdk/`. Contains `index.html` and `page-2.html` whose `<head>` holds ONLY that variant's Amplitude wiring plus the lab scripts (marked `data-lab`), and an `adapter.js` that defines `window.LabAdapter` (maps the lab's actions onto the SDK). Variants that need npm have `package.json`, `src/`, and a committed `dist/` bundle.
 - Page copy, buttons, element ids, event names and properties live only in `shared/lab.js`. Never put page content in a variant folder.
 - `HANDOVER.md` — current state, decisions and next steps. Keep it updated when finishing a piece of work.
 

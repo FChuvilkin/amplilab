@@ -1,19 +1,11 @@
 // AmpliLab tooling, NOT part of any Amplitude wiring.
-// Load this FIRST in <head>, before any Amplitude script, so that:
-//   1. the run_id is known before the SDK sends its first event, and
-//   2. the network tap is in place before the SDK grabs fetch / XMLHttpRequest / sendBeacon.
-// It records every request to *.amplitude.com made from the page's main thread, decodes the payload
+// Load this FIRST in <head>, before any Amplitude script, so the network tap is in place
+// before the SDK grabs fetch / XMLHttpRequest / sendBeacon.
+// It records every request to *.amplitude.com made from the page or from its Web Workers (Session Replay uploads), decodes the payload
 // (including gzip bodies) and the response, and hands them to shared/lab.js via the 'lab:net' event.
-// Limitation: requests made from Web Workers (Session Replay uploads) are invisible to it.
+// Limitation: module workers and requests made by service workers are not covered.
 (function () {
   'use strict';
-
-  // ---------- run_id ----------
-  // Comes from ?run=… in the URL, else from localStorage (shared by all pages of the lab on this origin).
-  var RUN_KEY = 'amplilab_run_id';
-  var fromUrl = new URLSearchParams(location.search).get('run');
-  if (fromUrl) try { localStorage.setItem(RUN_KEY, fromUrl); } catch (e) {}
-  var runId = fromUrl || (function () { try { return localStorage.getItem(RUN_KEY) || ''; } catch (e) { return ''; } })();
 
   // ---------- network tap ----------
   var entries = [];
@@ -121,13 +113,64 @@
     };
   }
 
+  // Web Workers (Session Replay uploads). Page-side patches can't see requests made inside a worker, so wrap
+  // `Worker`: each classic worker starts from a tiny prelude that patches fetch/XHR inside the worker and reports
+  // every amplitude.com request over a BroadcastChannel (not postMessage, so the SDK's own messages are untouched),
+  // then loads the original script with importScripts(). Module workers are left as they are.
+  var CH = 'amplilab-net';
+  function workerPrelude(target) {
+    return '(' + function (target, CH) {
+      var ch = new BroadcastChannel(CH);
+      function isA(u) { try { return /(^|\.)amplitude\.com$/.test(new URL(u, self.location.href).hostname); } catch (e) { return false; } }
+      function send(m) { m.__lab = true; m.t = Date.now(); try { ch.postMessage(m); } catch (e) { m.body = '[body not cloneable]'; try { ch.postMessage(m); } catch (e2) {} } }
+      var of = self.fetch;
+      if (of) self.fetch = function (input, init) {
+        var url = typeof input === 'string' ? input : (input && input.url) || String(input);
+        if (!isA(url)) return of.apply(this, arguments);
+        var method = (init && init.method) || (input && input.method) || 'GET', body = init && init.body;
+        return of.apply(this, arguments).then(function (res) {
+          res.clone().text().then(function (t) { send({ method: method, url: url, body: body, status: res.status, text: t, transport: 'fetch (worker)' }); },
+            function () { send({ method: method, url: url, body: body, status: res.status, text: '', transport: 'fetch (worker)' }); });
+          return res;
+        }, function (err) { send({ method: method, url: url, body: body, status: 0, text: '', error: String(err), transport: 'fetch (worker)' }); throw err; });
+      };
+      var X = self.XMLHttpRequest && self.XMLHttpRequest.prototype;
+      if (X) {
+        var oo = X.open, os = X.send;
+        X.open = function (m, u) { this.__l = isA(u) ? { m: m, u: u } : null; return oo.apply(this, arguments); };
+        X.send = function (b) {
+          if (this.__l) {
+            var l = this.__l, x = this;
+            x.addEventListener('loadend', function () {
+              var t = ''; try { t = x.responseType === '' || x.responseType === 'text' ? x.responseText : ''; } catch (e) {}
+              send({ method: l.m, url: l.u, body: b, status: x.status, text: t, error: x.status === 0 ? 'network error' : null, transport: 'xhr (worker)' });
+            });
+          }
+          return os.apply(this, arguments);
+        };
+      }
+      importScripts(target);
+    } + ')(' + JSON.stringify(target) + ',' + JSON.stringify(CH) + ');';
+  }
+  var OrigWorker = window.Worker;
+  if (OrigWorker && window.BroadcastChannel && window.Blob && window.URL) {
+    window.Worker = function (url, options) {
+      if (options && options.type === 'module') return new OrigWorker(url, options);
+      var target; try { target = new URL(String(url), location.href).href; } catch (e) { return new OrigWorker(url, options); }
+      var blobUrl = URL.createObjectURL(new Blob([workerPrelude(target)], { type: 'text/javascript' }));
+      return new OrigWorker(blobUrl, options);
+    };
+    window.Worker.prototype = OrigWorker.prototype;
+    new BroadcastChannel(CH).onmessage = function (ev) {
+      var m = ev.data;
+      if (!m || !m.__lab) return;
+      var rec = record(m.method, m.url, m.body, m.transport);
+      rec.entry.t = m.t;
+      rec.done(m.status, m.text, m.error);
+    };
+  }
+
   window.LabEarly = {
-    runId: function () { return runId; },
-    setRunId: function (id) {
-      runId = String(id || '').trim();
-      try { runId ? localStorage.setItem(RUN_KEY, runId) : localStorage.removeItem(RUN_KEY); } catch (e) {}
-      return runId;
-    },
     entries: function () { return entries.slice(); }
   };
 })();
