@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AmpliLab · Unified SDK (npm) + Web Experiment · second page</title>
+
+  <!-- Lab tooling, not Amplitude: run_id + network tap. Must load before any Amplitude script. -->
+  <script src="../shared/lab-early.js" data-lab></script>
+
+  <!-- ===== Amplitude wiring for this variant ===== -->
+  <!-- 1. Browser Unified SDK (npm @amplitude/unified, bundled from src/main.js). Sync, so it's initialised before Web Experiment runs. -->
+  <script src="dist/amplitude-unified.js"></script>
+  <!-- 2. Web Experiment: separate script, synchronous and high in <head> so variants apply before paint. -->
+  <script src="https://cdn.amplitude.com/script/06556c56eb0e04dd109403f006794241.experiment.js"></script>
+  <!-- ===== end of Amplitude wiring ===== -->
+
+  <!-- Lab tooling: adapter.js maps the shared page's actions onto this variant's SDK. -->
+  <script src="adapter.js" data-lab></script>
+  <script src="../registry.js" data-lab></script>
+  <link rel="stylesheet" href="../shared/lab.css">
+</head>
+<body data-lab-page="second">
+  <!-- The whole page is rendered by shared/lab.js, identical in every variant. -->
+  <script src="../shared/lab.js" data-lab></script>
+</body>
+</html>

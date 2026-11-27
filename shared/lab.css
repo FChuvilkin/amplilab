@@ -1,0 +1,85 @@
+/* AmpliLab shared page styles. Identical for every variant. */
+* { box-sizing: border-box; }
+body { margin: 0; font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; color: #1d1d1f; background: #f5f5f7; }
+code, pre { font: 12px/1.5 ui-monospace, Menlo, monospace; }
+.small { font-size: 12px; font-weight: normal; }
+.muted { color: #9ca3af; }
+.ok { color: #10b981; }
+.bad { color: #f87171; }
+.strip-spacer { flex: 1; }
+
+/* header strip */
+.lab-strip { background: #1e1b4b; color: #e0e7ff; padding: 10px 24px; font-size: 13px; }
+.strip-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; max-width: 1200px; margin: 0 auto; }
+.strip-row + .strip-row { margin-top: 6px; }
+.strip-home { color: #fff; font-weight: 700; letter-spacing: .5px; text-decoration: none; text-transform: uppercase; }
+.strip-title { font-weight: 600; color: #fff; }
+.lab-strip a { color: #c7d2fe; }
+.lab-strip select { font: inherit; padding: 2px 4px; border-radius: 6px; }
+.strip-meta code { color: #fde68a; }
+.strip-versions { color: #a5b4fc; font-size: 12px; }
+.strip-versions b { color: #e0e7ff; font-weight: 500; }
+.badge { display: inline-block; font-size: 11px; padding: 1px 8px; border-radius: 999px; background: #312e81; color: #e0e7ff; }
+
+main { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+/* hero + plans (Web Experiment targets) */
+.hero { text-align: center; padding: 32px 0 40px; }
+.hero h1 { font-size: 44px; line-height: 1.1; margin: 0 0 16px; }
+.hero p { font-size: 19px; color: #555; max-width: 620px; margin: 0 auto 28px; }
+.hero .btn + .btn { margin-left: 8px; }
+.btn { display: inline-block; border: 0; border-radius: 8px; padding: 12px 22px; font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; background: #4f46e5; color: #fff; }
+.btn-primary { background: #4f46e5; color: #fff; }
+.btn-secondary { background: #fff; color: #4f46e5; border: 1px solid #c7d2fe; }
+.btn-small { padding: 6px 12px; font-size: 14px; }
+.btn-ghost { background: transparent; color: #c7d2fe; border: 1px solid #4b5563; }
+.plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; max-width: 960px; margin: 0 auto 32px; }
+.plan { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.plan h3 { margin: 0 0 4px; }
+.plan .price { font-size: 30px; font-weight: 700; margin: 8px 0 16px; }
+.plan.featured { outline: 2px solid #4f46e5; }
+.plan .btn { width: 100%; }
+
+/* panels */
+.panel { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.08); margin-bottom: 20px; min-width: 0; }
+.panel h2 { font-size: 16px; margin: 0 0 12px; }
+.panel h3 { font-size: 14px; margin: 16px 0 8px; }
+.panel.dark { background: #111827; color: #d1fae5; }
+.panel.dark h2, .panel.dark h3 { color: #fff; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; }
+.row label { font-size: 14px; min-width: 150px; }
+.row input, .row select { font: inherit; font-size: 14px; padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 6px; }
+.row input { min-width: 220px; }
+.links a { margin-right: 18px; font-size: 14px; color: #4f46e5; }
+
+.two-col { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 20px; }
+@media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+
+/* state */
+#state dl { display: grid; grid-template-columns: 140px 1fr; column-gap: 8px; margin: 0 0 16px; font: 13px/1.6 ui-monospace, Menlo, monospace; }
+#state dt { color: #9ca3af; }
+#state dd { margin: 0; word-break: break-all; }
+.checks { list-style: none; padding: 0; margin: 0; font-size: 13px; }
+
+/* log */
+.log-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.log-head h2 { margin: 0; }
+.log-cols { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.log { max-height: 280px; overflow: auto; font: 12px/1.5 ui-monospace, Menlo, monospace; color: #fde68a; background: #0b1220; border-radius: 8px; padding: 8px; }
+.log-line { padding: 1px 0; word-break: break-all; }
+.log details summary { cursor: pointer; }
+.log pre { background: #111827; color: #d1fae5; padding: 8px; border-radius: 6px; max-height: 260px; overflow: auto; white-space: pre-wrap; margin: 4px 0; }
+.evs { color: #93c5fd; }
+
+/* expected events */
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #eee; vertical-align: top; }
+th { color: #6b7280; font-weight: 600; }
+td.ok { color: #047857; font-weight: 700; }
+#unexpected { margin-top: 10px; color: #6b7280; }
+
+/* wiring */
+#wiring details { margin: 8px 0; }
+#wiring summary { cursor: pointer; font-weight: 600; font-size: 14px; }
+#wiring pre { background: #111827; color: #d1fae5; padding: 12px; border-radius: 8px; overflow: auto; max-height: 420px; white-space: pre-wrap; }
+#wiring ul { font-size: 14px; }
