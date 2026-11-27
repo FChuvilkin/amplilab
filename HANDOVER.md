@@ -6,7 +6,7 @@ Last updated: 2026-11-27. Written by the agent that built the first pieces insid
 An "implementation lab": identical pages, each wired to Amplitude differently, each streaming into its own Amplitude project, published on GitHub Pages so external people can open them. Pages are for debugging: they show exactly how Amplitude is implemented on them, plus live SDK state and a log.
 
 ## What exists right now
-- `index.html` + `registry.js` — tracking-free landing page with 4 variant cards. Only `unified-sdk` is live; the other 3 are placeholders (`status: 'planned'`, no API key).
+- `index.html` + `registry.js` — tracking-free landing page with 4 variant cards. Uses the same Awora branding as the variant pages (links `shared/lab.css` for fonts, palette, header, buttons, badges; homepage-only styles inline). Only `unified-sdk` is live; the other 3 are placeholders (`status: 'planned'`, no API key).
 - `unified-sdk/` — **working**. npm `@amplitude/unified` 1.2.9 bundled with esbuild into `dist/amplitude-unified.js` (committed, ~812 KB), initialised with `initAll()` (Analytics with autocapture on, Session Replay sampleRate 1, Feature Experiment, Guides & Surveys), plus the separate Web Experiment script tag loaded right after the bundle in `<head>`.
   - API key: `06556c56eb0e04dd109403f006794241` (its own Amplitude project, US zone).
   - Events it sends: `Lab Page Viewed`, `CTA Clicked`, `Plan Selected`, plus autocaptured `[Amplitude] …` events, `$identify`, `session_start`, Guides & Surveys boot event. Library tag: `amplitude-ts-unified/1.2.9-amplitude-ts/2.50.1`.
